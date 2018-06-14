@@ -1,10 +1,31 @@
 /**
  * Builder for traversals which can traverse node structures in SiteVision.
+ *
+ * @author Hampus Nordin <nordin.hampus@gmail.com>
  * @return {Object}
  */
-var traversalBuilder = (function (exports) {
-  var nodeTypeUtil     = require('NodeTypeUtil');
-  var instanceTypeUtil = require('InstanceTypeUtil');
+/* globals require, module */
+(function (root, factory) {
+  if (typeof define === 'function') {
+    // AMD. Register as an anonymous module.
+    define(factory);
+  } else if (typeof module === 'object' && module.exports) {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.
+    module.exports = factory();
+  } else {
+    // Browser globals (root is window)
+    root.traversalBuilder = factory();
+  }
+}(typeof self !== 'undefined' ? self : this, function () {
+  var exports = {};
+
+  var nodeTypeUtil        = require('NodeTypeUtil');
+  var instanceTypeUtil    = require('InstanceTypeUtil');
+  var restApi             = require('RestApi');
+  var logUtil             = require('LogUtil');
+  var resourceLocatorUtil = require('ResourceLocatorUtil');
 
   var _recurseTypes = [
                         nodeTypeUtil.SITE_PAGE_TYPE,
@@ -17,7 +38,36 @@ var traversalBuilder = (function (exports) {
                         nodeTypeUtil.ARTICLE_TYPE
                       ];
   var _callback     = null;
+  var _denyCallback = null;
   var _maxDepth     = null;
+  var _useRestApi   = false;
+
+  /**
+   * @param  {jcrNode} jcrNode
+   * @return {Object}
+   */
+  function mockupRestNodeFromJcrNode (jcrNode) {
+    return {
+      "id": jcrNode.getIdentifier(),
+      "name": jcrNode.toString(),
+      "type": jcrNode.getPrimaryNodeType(),
+      "path": "",
+      "properties": []
+    };
+  }
+
+  /**
+   * @param  {Mixed} mixed
+   * @return {Mixed}
+   */
+  function castToJs (mixed) {
+    try {
+      mixed = JSON.parse(JSON.stringify(mixed));
+    } catch (e) {
+      logUtil.debug(e + '');
+    }
+    return mixed;
+  }
 
   /**
    * Traversal class
@@ -27,39 +77,95 @@ var traversalBuilder = (function (exports) {
    * @param {Function} callback     Callback for accepted nodes.
    * @param {Integer}  maxDepth     Number of levels to traverse.
    */
-  var Traversal = function Traversal (recurseTypes, acceptTypes, callback, maxDepth) {
+  var Traversal = function Traversal (recurseTypes, acceptTypes, callback, denyCallback, maxDepth, useRestApi) {
     this.recurseTypes = recurseTypes;
     this.acceptTypes  = acceptTypes;
     this.callback     = callback;
+    this.denyCallback = denyCallback;
     this.level        = 0;
     this.maxDepth     = maxDepth;
+    this.useRestApi   = useRestApi;
   };
 
   /**
-   * Main traversal function. Traverses node structures.
-   *
-   * @param  {Node} node The start node to traverse recursively on.
+   * Traversal function for traversing through the Rest API.
+   * 
+   * @param  {Object} restNode A node representation as seen in the Rest API.
+   * @param  {Mixed}  context  Some context passed through to each executed callback.
    * @return {Void}
    */
-  Traversal.prototype.traverse = function traverse (node) {
+  Traversal.prototype.traverseRest = function traverseRest (restNode, context, options) {
     var nodes;
+    var result;
+    var i;
+    options = options || {};
 
-    if (instanceTypeUtil.isNode(node)) {
-      if (nodeTypeUtil.isTypeOf(node, this.acceptTypes)) {
-        this.callback(node);
+    if (restNode && restNode.id && restNode.type) {
+      if (this.acceptTypes.indexOf(restNode.type + '') !== -1) {
+        this.callback(restNode, context);
+      } else if (typeof this.denyCallback === 'function') {
+        this.denyCallback(restNode, context);
       }
 
-      if (nodeTypeUtil.isTypeOf(node, this.recurseTypes)) {
-        nodes = node.getNodes();
+
+      if (this.recurseTypes.indexOf(restNode.type + '') !== -1) {
+        result = restApi.get(resourceLocatorUtil.getNodeByIdentifier(restNode.id), 'nodes', options);
+        nodes = (result.statusCode >= 200 && result.statusCode < 300) ? result.body : [];
 
         this.level++;
         if (!this.maxDepth || this.level <= this.maxDepth) {
-          while (nodes.hasNext()) {
-            this.traverse(nodes.nextNode());
+          for (i = 0; i < nodes.length; i++) {
+            this.traverseRest(nodes[i], context, options);
           }
         }
         this.level--;
       }
+    }
+  }
+
+  /**
+   * Traversal function for traversing the JCR structure.
+   * 
+   * @param  {Node}  jcrNode A JCR Node. I.e. an article or a page.
+   * @param  {Mixed} context Some context passed through to each executed callback.
+   * @return {Void}
+   */
+  Traversal.prototype.traverseJcr = function traverseJcr (jcrNode, context) {
+    var nodes;
+
+    if (instanceTypeUtil.isNode(jcrNode)) {
+      if (nodeTypeUtil.isTypeOf(jcrNode, this.acceptTypes)) {
+        this.callback(jcrNode, context);
+      } else if (typeof this.denyCallback === 'function') {
+        this.denyCallback(jcrNode, context);
+      }
+
+      if (nodeTypeUtil.isTypeOf(jcrNode, this.recurseTypes)) {
+        nodes = jcrNode.getNodes();
+
+        this.level++;
+        if (!this.maxDepth || this.level <= this.maxDepth) {
+          while (nodes.hasNext()) {
+            this.traverseJcr(nodes.nextNode(), context);
+          }
+        }
+        this.level--;
+      }
+    }
+  };
+
+  /**
+   * Main traversal function. Traverses node structures either through JCR structure 
+   * or through the Rest API.
+   *
+   * @param  {Node} node The start node to traverse recursively on.
+   * @return {Void}
+   */
+  Traversal.prototype.traverse = function traverse (node, context) {
+    if (this.useRestApi) {
+      this.traverseRest(mockupRestNodeFromJcrNode(node), context);
+    } else {
+      this.traverseJcr(node, context);
     }
   };
 
@@ -69,7 +175,7 @@ var traversalBuilder = (function (exports) {
    * @param {Array} types Array of strings.
    */
   exports.setRecurseTypes = function setRecurseTypes (types) {
-    _recurseTypes = Array.isArray(types) ? types : [types];
+    _recurseTypes = castToJs(Array.isArray(types) ? types : [types]);
     return exports;
   };
 
@@ -79,7 +185,7 @@ var traversalBuilder = (function (exports) {
    * @param {Array} types Array of strings.
    */
   exports.setAcceptTypes = function setAcceptTypes (types) {
-    _acceptTypes = Array.isArray(types) ? types : [types];
+    _acceptTypes = castToJs(Array.isArray(types) ? types : [types]);
     return exports;
   };
 
@@ -95,6 +201,17 @@ var traversalBuilder = (function (exports) {
   };
 
   /**
+   * Set the callback which will be executed on all
+   * traversed nodes matching the accept types.
+   *
+   * @param {Function} callback
+   */
+  exports.setDenyCallback = function setDenyCallback (denyCallback) {
+    _denyCallback = denyCallback;
+    return exports;
+  };
+
+  /**
    * Set the max depth to traverse. This is the max amount
    * of times Node.getNodes() will be called recursivly.
    *
@@ -106,9 +223,19 @@ var traversalBuilder = (function (exports) {
   };
 
   /**
+   * Set whether to use the REST API or through the regular JCR structure.
+   * 
+   * @param {Boolean} useRestApi
+   */
+  exports.setUseRestApi = function setUseRestApi (useRestApi) {
+    _useRestApi = !!useRestApi;
+    return exports;
+  };
+
+  /**
    * Build a traversal object.
    *
-   * @return {traversal}
+   * @return {Traversal}
    */
   exports.build = function build () {
     if (typeof _callback !== 'function') {
@@ -120,8 +247,8 @@ var traversalBuilder = (function (exports) {
     if (_acceptTypes.length === 0) {
       throw new Error('Missing accept types.');
     }
-    return new Traversal(_recurseTypes, _acceptTypes, _callback, _maxDepth);
+    return new Traversal(_recurseTypes, _acceptTypes, _callback, _denyCallback, _maxDepth, _useRestApi);
   };
 
   return exports;
-})({});
+}));
