@@ -107,13 +107,12 @@
         this.denyCallback(restNode, context);
       }
 
-
       if (this.recurseTypes.indexOf(restNode.type + '') !== -1) {
-        result = restApi.get(resourceLocatorUtil.getNodeByIdentifier(restNode.id), 'nodes', options);
-        nodes = (result.statusCode >= 200 && result.statusCode < 300) ? result.body : [];
-
         this.level++;
         if (!this.maxDepth || this.level <= this.maxDepth) {
+          result = restApi.get(resourceLocatorUtil.getNodeByIdentifier(restNode.id), 'nodes', options);
+          nodes = (result.statusCode >= 200 && result.statusCode < 300) ? result.body : [];
+
           for (i = 0; i < nodes.length; i++) {
             this.traverseRest(nodes[i], context, options);
           }
@@ -141,10 +140,10 @@
       }
 
       if (nodeTypeUtil.isTypeOf(jcrNode, this.recurseTypes)) {
-        nodes = jcrNode.getNodes();
-
         this.level++;
         if (!this.maxDepth || this.level <= this.maxDepth) {
+          nodes = jcrNode.getNodes();
+
           while (nodes.hasNext()) {
             this.traverseJcr(nodes.nextNode(), context);
           }
