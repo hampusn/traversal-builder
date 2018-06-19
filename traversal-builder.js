@@ -1,8 +1,9 @@
 /**
- * Builder for traversals which can traverse node structures in SiteVision.
- *
+ * @file Builder for traversals which can traverse node structures in SiteVision.
  * @author Hampus Nordin <nordin.hampus@gmail.com>
- * @return {Object}
+ * @copyright Hampus Nordin 2018
+ * @license MIT
+ * @module traversalBuilder
  */
 /* globals require, module */
 (function (root, factory) {
@@ -89,7 +90,7 @@
 
   /**
    * Traversal function for traversing through the Rest API.
-   * 
+   *
    * @param  {Object} restNode A node representation as seen in the Rest API.
    * @param  {Mixed}  context  Some context passed through to each executed callback.
    * @return {Void}
@@ -124,7 +125,7 @@
 
   /**
    * Traversal function for traversing the JCR structure.
-   * 
+   *
    * @param  {Node}  jcrNode A JCR Node. I.e. an article or a page.
    * @param  {Mixed} context Some context passed through to each executed callback.
    * @return {Void}
@@ -154,7 +155,7 @@
   };
 
   /**
-   * Main traversal function. Traverses node structures either through JCR structure 
+   * Main traversal function. Traverses node structures either through JCR structure
    * or through the Rest API.
    *
    * @param  {Node} node The start node to traverse recursively on.
@@ -223,7 +224,7 @@
 
   /**
    * Set whether to use the REST API or through the regular JCR structure.
-   * 
+   *
    * @param {Boolean} useRestApi
    */
   exports.setUseRestApi = function setUseRestApi (useRestApi) {
