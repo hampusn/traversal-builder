@@ -121,7 +121,7 @@
         this.level--;
       }
     }
-  }
+  };
 
   /**
    * Traversal function for traversing the JCR structure.
