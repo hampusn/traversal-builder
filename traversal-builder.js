@@ -76,7 +76,9 @@
    * @param {Array}    recurseTypes Array of primary node types to traverse recursively.
    * @param {Array}    acceptTypes  Array of primary node types to execute callback on.
    * @param {Function} callback     Callback for accepted nodes.
+   * @param {Function} denyCallback Callback for accepted nodes.
    * @param {Integer}  maxDepth     Number of levels to traverse.
+   * @param {Boolean}  useRestApi   Whether or not to use the REST API.
    */
   var Traversal = function Traversal (recurseTypes, acceptTypes, callback, denyCallback, maxDepth, useRestApi) {
     this.recurseTypes = recurseTypes;
