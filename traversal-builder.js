@@ -86,6 +86,7 @@
     this.callback     = callback;
     this.denyCallback = denyCallback;
     this.level        = 0;
+    this.break        = false;
     this.maxDepth     = maxDepth;
     this.useRestApi   = useRestApi;
   };
@@ -102,6 +103,10 @@
     var result;
     var i;
     options = options || {};
+
+    if (this.break) {
+      return;
+    }
 
     if (restNode && restNode.id && restNode.type) {
       if (this.acceptTypes.indexOf(restNode.type + '') !== -1) {
@@ -134,6 +139,10 @@
    */
   Traversal.prototype.traverseJcr = function traverseJcr (jcrNode, context) {
     var nodes;
+
+    if (this.break) {
+      return;
+    }
 
     if (instanceTypeUtil.isNode(jcrNode)) {
       if (nodeTypeUtil.isTypeOf(jcrNode, this.acceptTypes)) {
