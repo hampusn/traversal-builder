@@ -41,6 +41,7 @@
   var _callback     = null;
   var _denyCallback = null;
   var _maxDepth     = null;
+  var _maxNodes     = 0;
   var _useRestApi   = false;
 
   /**
@@ -80,14 +81,16 @@
    * @param {Integer}  maxDepth     Number of levels to traverse.
    * @param {Boolean}  useRestApi   Whether or not to use the REST API.
    */
-  var Traversal = function Traversal (recurseTypes, acceptTypes, callback, denyCallback, maxDepth, useRestApi) {
+  var Traversal = function Traversal (recurseTypes, acceptTypes, callback, denyCallback, maxDepth, maxNodes, useRestApi) {
     this.recurseTypes = recurseTypes;
     this.acceptTypes  = acceptTypes;
     this.callback     = callback;
     this.denyCallback = denyCallback;
     this.level        = 0;
+    this.numNodes     = 0;
     this.break        = false;
     this.maxDepth     = maxDepth;
+    this.maxNodes     = maxNodes;
     this.useRestApi   = useRestApi;
   };
 
@@ -108,9 +111,14 @@
       return;
     }
 
+    if (this.maxNodes > 0 && this.numNodes >= this.maxNodes) {
+      return;
+    }
+
     if (restNode && restNode.id && restNode.type) {
       if (this.acceptTypes.indexOf(restNode.type + '') !== -1) {
         this.callback(restNode, context);
+        this.numNodes++;
       } else if (typeof this.denyCallback === 'function') {
         this.denyCallback(restNode, context);
       }
@@ -144,9 +152,14 @@
       return;
     }
 
+    if (this.maxNodes > 0 && this.numNodes >= this.maxNodes) {
+      return;
+    }
+
     if (instanceTypeUtil.isNode(jcrNode)) {
       if (nodeTypeUtil.isTypeOf(jcrNode, this.acceptTypes)) {
         this.callback(jcrNode, context);
+        this.numNodes++;
       } else if (typeof this.denyCallback === 'function') {
         this.denyCallback(jcrNode, context);
       }
@@ -173,6 +186,7 @@
    * @return {Void}
    */
   Traversal.prototype.traverse = function traverse (node, context) {
+    this.numNodes = 0;
     if (this.useRestApi) {
       this.traverseRest(mockupRestNodeFromJcrNode(node), context);
     } else {
@@ -234,6 +248,16 @@
   };
 
   /**
+   * Set the max number of nodes to execute the callback on.
+   *
+   * @param {Integer} maxNodes
+   */
+  exports.setMaxNodes = function setMaxNodes (maxNodes) {
+    _maxNodes = parseInt(maxNodes);
+    return exports;
+  };
+
+  /**
    * Set whether to use the REST API or through the regular JCR structure.
    *
    * @param {Boolean} useRestApi
@@ -258,7 +282,7 @@
     if (_acceptTypes.length === 0) {
       throw new Error('Missing accept types.');
     }
-    return new Traversal(_recurseTypes, _acceptTypes, _callback, _denyCallback, _maxDepth, _useRestApi);
+    return new Traversal(_recurseTypes, _acceptTypes, _callback, _denyCallback, _maxDepth, _maxNodes, _useRestApi);
   };
 
   return exports;
