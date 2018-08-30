@@ -88,7 +88,7 @@
     this.denyCallback = denyCallback;
     this.level        = 0;
     this.numNodes     = 0;
-    this.break        = false;
+    this._break       = false;
     this.maxDepth     = maxDepth;
     this.maxNodes     = maxNodes;
     this.useRestApi   = useRestApi;
@@ -107,7 +107,7 @@
     var i;
     options = options || {};
 
-    if (this.break) {
+    if (this._break) {
       return;
     }
 
@@ -148,7 +148,7 @@
   Traversal.prototype.traverseJcr = function traverseJcr (jcrNode, context) {
     var nodes;
 
-    if (this.break) {
+    if (this._break) {
       return;
     }
 
@@ -187,11 +187,21 @@
    */
   Traversal.prototype.traverse = function traverse (node, context) {
     this.numNodes = 0;
+    this._break = false;
     if (this.useRestApi) {
       this.traverseRest(mockupRestNodeFromJcrNode(node), context);
     } else {
       this.traverseJcr(node, context);
     }
+  };
+
+  /**
+   * Indicates that the traversal should break and halt further traversing and execution.
+   * 
+   * @return {Void}
+   */
+  Traversal.prototype.break = function break () {
+    this._break = true;
   };
 
   /**

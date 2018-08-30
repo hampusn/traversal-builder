@@ -25,6 +25,7 @@ The built `Traversal` instance has the following methods.
 Return | Method | Description
 ------ | ------ | -----------
 `Void` | `traverse (Node node, Object context)` | Main traversal function. Traverses node structures either through JCR structure or through the Rest API.
+`Void` | `break ()` | Indicates that the traversal should break and halt further traversing and execution.
 
 ## Example
 
