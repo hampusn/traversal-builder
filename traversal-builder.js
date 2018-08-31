@@ -28,21 +28,23 @@
   var logUtil             = require('LogUtil');
   var resourceLocatorUtil = require('ResourceLocatorUtil');
 
-  var _recurseTypes = [
-                        nodeTypeUtil.SITE_PAGE_TYPE,
-                        nodeTypeUtil.PAGE_TYPE,
-                        nodeTypeUtil.ARCHIVE_TYPE,
-                        nodeTypeUtil.FOLDER_TYPE
-                      ];
-  var _acceptTypes  = [
-                        nodeTypeUtil.PAGE_TYPE,
-                        nodeTypeUtil.ARTICLE_TYPE
-                      ];
-  var _callback     = null;
-  var _denyCallback = null;
-  var _maxDepth     = null;
-  var _maxNodes     = 0;
-  var _useRestApi   = false;
+  var _recurseTypes    = [
+                           nodeTypeUtil.SITE_PAGE_TYPE,
+                           nodeTypeUtil.PAGE_TYPE,
+                           nodeTypeUtil.ARCHIVE_TYPE,
+                           nodeTypeUtil.FOLDER_TYPE
+                         ];
+  var _acceptTypes     = [
+                           nodeTypeUtil.PAGE_TYPE,
+                           nodeTypeUtil.ARTICLE_TYPE
+                         ];
+  var _recurseCallback = null;
+  var _acceptCallback  = null;
+  var _callback        = null;
+  var _denyCallback    = null;
+  var _maxDepth        = null;
+  var _maxNodes        = 0;
+  var _useRestApi      = false;
 
   /**
    * @param  {jcrNode} jcrNode
@@ -81,17 +83,17 @@
    * @param {Integer}  maxDepth     Number of levels to traverse.
    * @param {Boolean}  useRestApi   Whether or not to use the REST API.
    */
-  var Traversal = function Traversal (recurseTypes, acceptTypes, callback, denyCallback, maxDepth, maxNodes, useRestApi) {
-    this.recurseTypes = recurseTypes;
-    this.acceptTypes  = acceptTypes;
-    this.callback     = callback;
-    this.denyCallback = denyCallback;
-    this.level        = 0;
-    this.numNodes     = 0;
-    this._break       = false;
-    this.maxDepth     = maxDepth;
-    this.maxNodes     = maxNodes;
-    this.useRestApi   = useRestApi;
+  var Traversal = function Traversal (recurseCallback, acceptCallback, callback, denyCallback, maxDepth, maxNodes, useRestApi) {
+    this.recurseCallback = recurseCallback;
+    this.acceptCallback  = acceptCallback;
+    this.callback        = callback;
+    this.denyCallback    = denyCallback;
+    this.level           = 0;
+    this.numNodes        = 0;
+    this._break          = false;
+    this.maxDepth        = maxDepth;
+    this.maxNodes        = maxNodes;
+    this.useRestApi      = useRestApi;
   };
 
   /**
@@ -157,14 +159,14 @@
     }
 
     if (instanceTypeUtil.isNode(jcrNode)) {
-      if (nodeTypeUtil.isTypeOf(jcrNode, this.acceptTypes)) {
+      if (this.acceptCallback(jcrNode)) {
         this.callback(jcrNode, context);
         this.numNodes++;
       } else if (typeof this.denyCallback === 'function') {
         this.denyCallback(jcrNode, context);
       }
 
-      if (nodeTypeUtil.isTypeOf(jcrNode, this.recurseTypes)) {
+      if (this.recurseCallback(jcrNode)) {
         this.level++;
         if (!this.maxDepth || this.level <= this.maxDepth) {
           nodes = jcrNode.getNodes();
@@ -221,6 +223,16 @@
    */
   exports.setAcceptTypes = function setAcceptTypes (types) {
     _acceptTypes = castToJs(Array.isArray(types) ? types : [types]);
+    return exports;
+  };
+
+  exports.setRecurseCallback = function setRecurseCallback (callback) {
+    _recurseCallback = callback;
+    return exports;
+  };
+
+  exports.setAcceptCallback = function setAcceptCallback (callback) {
+    _acceptCallback = callback;
     return exports;
   };
 
@@ -283,16 +295,32 @@
    * @return {Traversal}
    */
   exports.build = function build () {
+    var recurseCallback = _recurseCallback;
+    var acceptCallback = _acceptCallback;
+
     if (typeof _callback !== 'function') {
       throw new Error('Missing callback.');
     }
-    if (_recurseTypes.length === 0) {
+    if (_recurseTypes.length === 0 && typeof recurseCallback !== 'function') {
       throw new Error('Missing recurse types.');
     }
-    if (_acceptTypes.length === 0) {
+    if (_acceptTypes.length === 0 && typeof acceptCallback !== 'function') {
       throw new Error('Missing accept types.');
     }
-    return new Traversal(_recurseTypes, _acceptTypes, _callback, _denyCallback, _maxDepth, _maxNodes, _useRestApi);
+
+    if (typeof recurseCallback !== 'function') {
+      recurseCallback = function (node) {
+        return nodeTypeUtil.isTypeOf(node, _recurseTypes);
+      };
+    }
+
+    if (typeof acceptCallback !== 'function') {
+      acceptCallback = function (node) {
+        return nodeTypeUtil.isTypeOf(node, _acceptTypes);
+      };
+    }
+
+    return new Traversal(recurseCallback, acceptCallback, _callback, _denyCallback, _maxDepth, _maxNodes, _useRestApi);
   };
 
   return exports;
