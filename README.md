@@ -9,11 +9,12 @@ Return | Method | Description
 ------ | ------ | -----------
 `TraversalBuilder` | `setRecurseTypes (Array types)` | Set which primary node types to recurse/traverse on. See [NodeTypeUtil][docs-node-type-util] for examples.
 `TraversalBuilder` | `setAcceptTypes (Array types)` | Set which primary node types to execute callback on. See [NodeTypeUtil][docs-node-type-util] for examples.
+`TraversalBuilder` | `setRecurseCallback (callback)` | Set the callback which will be used to determine if the current node should be traversed or not. This callback will be used instead of the default check of node types.
+`TraversalBuilder` | `setAcceptCallback (callback)` | Set the callback which will be used to determine if a node is accepted for executing the main callback. This callback will be used instead of the default check of node types.
 `TraversalBuilder` | `setCallback (Function callback)` | Set the callback which will be executed on all traversed nodes matching the accept types.
 `TraversalBuilder` | `setDenyCallback (Function denyCallback)` | Set the callback which will be executed on all traversed nodes matching the accept types.
 `TraversalBuilder` | `setMaxDepth (int maxDepth)` | Set the max depth to traverse. This is the max amount of times `Node.getNodes()` will be called recursivly.
 `TraversalBuilder` | `setMaxNodes (int maxNodes)` | Set the max number of nodes to execute the callback on.
-`TraversalBuilder` | `setUseRestApi (boolean useRestApi)` | Set whether to use the REST API or through the regular JCR structure.
 `Traversal` | `build ()` | Build a traversal object.
 
 ## Traversal

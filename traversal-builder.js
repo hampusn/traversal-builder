@@ -161,11 +161,27 @@
     return exports;
   };
 
+  /**
+   * Set the callback which will be used to determine if the current node 
+   * should be traversed or not.
+   *
+   * This callback will be used instead of the default check of node types.
+   * 
+   * @param {Function} callback
+   */
   exports.setRecurseCallback = function setRecurseCallback (callback) {
     _recurseCallback = callback;
     return exports;
   };
 
+  /**
+   * Set the callback which will be used to determine if a node is accepted 
+   * for executing the main callback.
+   *
+   * This callback will be used instead of the default check of node types.
+   * 
+   * @param {Function} callback
+   */
   exports.setAcceptCallback = function setAcceptCallback (callback) {
     _acceptCallback = callback;
     return exports;
