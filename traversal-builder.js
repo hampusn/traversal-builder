@@ -137,7 +137,7 @@
    * 
    * @return {Void}
    */
-  Traversal.prototype.break = function break () {
+  Traversal.prototype.break = function breakTraversal () {
     this._break = true;
   };
 
