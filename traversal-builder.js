@@ -24,7 +24,6 @@
 
   var nodeTypeUtil        = require('NodeTypeUtil');
   var instanceTypeUtil    = require('InstanceTypeUtil');
-  var restApi             = require('RestApi');
   var logUtil             = require('LogUtil');
   var resourceLocatorUtil = require('ResourceLocatorUtil');
 
@@ -44,21 +43,6 @@
   var _denyCallback    = null;
   var _maxDepth        = null;
   var _maxNodes        = 0;
-  var _useRestApi      = false;
-
-  /**
-   * @param  {jcrNode} jcrNode
-   * @return {Object}
-   */
-  function mockupRestNodeFromJcrNode (jcrNode) {
-    return {
-      "id": jcrNode.getIdentifier(),
-      "name": jcrNode.toString(),
-      "type": jcrNode.getPrimaryNodeType(),
-      "path": "",
-      "properties": []
-    };
-  }
 
   /**
    * @param  {Mixed} mixed
@@ -81,9 +65,8 @@
    * @param {Function} callback     Callback for accepted nodes.
    * @param {Function} denyCallback Callback for accepted nodes.
    * @param {Integer}  maxDepth     Number of levels to traverse.
-   * @param {Boolean}  useRestApi   Whether or not to use the REST API.
    */
-  var Traversal = function Traversal (recurseCallback, acceptCallback, callback, denyCallback, maxDepth, maxNodes, useRestApi) {
+  var Traversal = function Traversal (recurseCallback, acceptCallback, callback, denyCallback, maxDepth, maxNodes) {
     this.recurseCallback = recurseCallback;
     this.acceptCallback  = acceptCallback;
     this.callback        = callback;
@@ -93,51 +76,6 @@
     this._break          = false;
     this.maxDepth        = maxDepth;
     this.maxNodes        = maxNodes;
-    this.useRestApi      = useRestApi;
-  };
-
-  /**
-   * Traversal function for traversing through the Rest API.
-   *
-   * @param  {Object} restNode A node representation as seen in the Rest API.
-   * @param  {Mixed}  context  Some context passed through to each executed callback.
-   * @return {Void}
-   */
-  Traversal.prototype.traverseRest = function traverseRest (restNode, context, options) {
-    var nodes;
-    var result;
-    var i;
-    options = options || {};
-
-    if (this._break) {
-      return;
-    }
-
-    if (this.maxNodes > 0 && this.numNodes >= this.maxNodes) {
-      return;
-    }
-
-    if (restNode && restNode.id && restNode.type) {
-      if (this.acceptTypes.indexOf(restNode.type + '') !== -1) {
-        this.callback(restNode, context);
-        this.numNodes++;
-      } else if (typeof this.denyCallback === 'function') {
-        this.denyCallback(restNode, context);
-      }
-
-      if (this.recurseTypes.indexOf(restNode.type + '') !== -1) {
-        this.level++;
-        if (!this.maxDepth || this.level <= this.maxDepth) {
-          result = restApi.get(resourceLocatorUtil.getNodeByIdentifier(restNode.id), 'nodes', options);
-          nodes = (result.statusCode >= 200 && result.statusCode < 300) ? result.body : [];
-
-          for (i = 0; i < nodes.length; i++) {
-            this.traverseRest(nodes[i], context, options);
-          }
-        }
-        this.level--;
-      }
-    }
   };
 
   /**
@@ -190,11 +128,8 @@
   Traversal.prototype.traverse = function traverse (node, context) {
     this.numNodes = 0;
     this._break = false;
-    if (this.useRestApi) {
-      this.traverseRest(mockupRestNodeFromJcrNode(node), context);
-    } else {
-      this.traverseJcr(node, context);
-    }
+
+    this.traverseJcr(node, context);
   };
 
   /**
@@ -280,16 +215,6 @@
   };
 
   /**
-   * Set whether to use the REST API or through the regular JCR structure.
-   *
-   * @param {Boolean} useRestApi
-   */
-  exports.setUseRestApi = function setUseRestApi (useRestApi) {
-    _useRestApi = !!useRestApi;
-    return exports;
-  };
-
-  /**
    * Build a traversal object.
    *
    * @return {Traversal}
@@ -320,7 +245,7 @@
       };
     }
 
-    return new Traversal(recurseCallback, acceptCallback, _callback, _denyCallback, _maxDepth, _maxNodes, _useRestApi);
+    return new Traversal(recurseCallback, acceptCallback, _callback, _denyCallback, _maxDepth, _maxNodes);
   };
 
   return exports;
