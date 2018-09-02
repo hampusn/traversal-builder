@@ -26,9 +26,11 @@ The built `Traversal` instance has the following methods.
 Return | Method | Description
 ------ | ------ | -----------
 `Void` | `traverse (Node node, Object context)` | Main traversal function. Traverses node structures either through JCR structure or through the Rest API.
-`Void` | `break ()` | Indicates that the traversal should break and halt further traversing and execution.
+`Void` | `break ()` | Indicates that the traversal should break and halt further traversing and execution. The break will happen at the beginning of the next iteration. So the current iteration (callback on node) will still finish.
 
 ## Example
+
+Simple example
 
 ```js
 traversalBuilder
@@ -42,5 +44,35 @@ if (scriptVariables.startNode) {
   traversal.traverse(startNode);
 }
 ```
+
+Chunk the iteration by setting and checking a metadata
+
+```js
+var nodeTypeUtil = require('NodeTypeUtil');
+var propertyUtil = require('PropertyUtil');
+var metadataUtil = require('MetadataUtil');
+var metadataName = 'has-been-processed';
+
+traversalBuilder
+  .setAcceptCallback(function (node) {
+    var isAcceptedType   = nodeTypeUtil.isTypeOf(node, [nodeTypeUtil.ARTICLE_TYPE, nodeTypeUtil.PAGE_TYPE]);
+    var hasBeenProcessed = propertyUtil.getString(node, metadataName, '').equals('Yes');
+
+    return isAcceptedType && hasBeenProcessed == false;
+  })
+  .setCallback(function (node) {
+    out.println(node.toString());
+
+    metadataUtil.setMetadataPropertyValue(node, metadataName, 'Yes');
+  })
+  .setMaxNodes(50);
+
+var traversal = traversalBuilder.build();
+
+if (scriptVariables.startNode) {
+  traversal.traverse(startNode);
+}
+```
+
 
 [docs-node-type-util]: https://developer.sitevision.se/webdav/files/apidocs/senselogic/sitevision/api/node/NodeTypeUtil.html
