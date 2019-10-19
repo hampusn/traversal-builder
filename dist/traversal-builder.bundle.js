@@ -134,7 +134,7 @@
 
   /**
    * Indicates that the traversal should break and halt further traversing and execution.
-   * 
+   *
    * @return {Void}
    */
   Traversal.prototype.break = function breakTraversal () {
@@ -162,11 +162,11 @@
   };
 
   /**
-   * Set the callback which will be used to determine if the current node 
+   * Set the callback which will be used to determine if the current node
    * should be traversed or not.
    *
    * This callback will be used instead of the default check of node types.
-   * 
+   *
    * @param {Function} callback
    */
   exports.setRecurseCallback = function setRecurseCallback (callback) {
@@ -175,11 +175,11 @@
   };
 
   /**
-   * Set the callback which will be used to determine if a node is accepted 
+   * Set the callback which will be used to determine if a node is accepted
    * for executing the main callback.
    *
    * This callback will be used instead of the default check of node types.
-   * 
+   *
    * @param {Function} callback
    */
   exports.setAcceptCallback = function setAcceptCallback (callback) {

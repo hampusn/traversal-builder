@@ -1,0 +1,38 @@
+{
+  "name": "@hampusn/traversal-builder",
+  "version": "1.0.0",
+  "description": "Builder for creating a traversal which can traverse node trees in SiteVision.",
+  "main": "./lib",
+  "files": [
+    "lib/",
+    "dist/"
+  ],
+  "scripts": {
+    "build": "babel lib -o dist/traversal-builder.bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hampusn/traversal-builder.git"
+  },
+  "keywords": [
+    "SiteVision"
+  ],
+  "author": "Hampus Nordin <nordin.hampus@gmail.com> (https://hampusnord.in)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hampusn/traversal-builder/issues"
+  },
+  "homepage": "https://github.com/hampusn/traversal-builder#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.6.4",
+    "@babel/core": "^7.6.4",
+    "@babel/plugin-external-helpers": "^7.2.0",
+    "@babel/preset-env": "^7.6.3"
+  },
+  "babel": {
+    "presets": [
+      ["@babel/preset-env"]
+    ],
+    "plugins": []
+  }
+}
