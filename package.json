@@ -1,6 +1,6 @@
 {
   "name": "@hampusn/traversal-builder",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Builder for creating a traversal which can traverse node trees in SiteVision.",
   "main": "./lib",
   "files": [
