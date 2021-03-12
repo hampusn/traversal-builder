@@ -33,30 +33,33 @@ Return | Method | Description
 Simple example
 
 ```js
+const { TraversalBuilder } = require('@hampusn/traversal-builder');
+const traversalBuilder = TraversalBuilder.getInstance();
+
 traversalBuilder
   .setCallback(function (node) {
     out.println(node.toString());
   });
 
-var traversal = traversalBuilder.build();
+const traversal = traversalBuilder.build();
 
 if (scriptVariables.startNode) {
-  traversal.traverse(startNode);
+  traversal.traverse(scriptVariables.startNode);
 }
 ```
 
 Chunk the iteration by setting and checking a metadata
 
 ```js
-var nodeTypeUtil = require('NodeTypeUtil');
-var propertyUtil = require('PropertyUtil');
-var metadataUtil = require('MetadataUtil');
-var metadataName = 'has-been-processed';
+const nodeTypeUtil = require('NodeTypeUtil');
+const propertyUtil = require('PropertyUtil');
+const metadataUtil = require('MetadataUtil');
+const metadataName = 'has-been-processed';
 
 traversalBuilder
   .setAcceptCallback(function (node) {
-    var isAcceptedType   = nodeTypeUtil.isTypeOf(node, [nodeTypeUtil.ARTICLE_TYPE, nodeTypeUtil.PAGE_TYPE]);
-    var hasBeenProcessed = propertyUtil.getString(node, metadataName, '').equals('Yes');
+    const isAcceptedType   = nodeTypeUtil.isTypeOf(node, [nodeTypeUtil.ARTICLE_TYPE, nodeTypeUtil.PAGE_TYPE]);
+    const hasBeenProcessed = propertyUtil.getString(node, metadataName, '').equals('Yes');
 
     return isAcceptedType && hasBeenProcessed == false;
   })
@@ -67,10 +70,10 @@ traversalBuilder
   })
   .setMaxNodes(50);
 
-var traversal = traversalBuilder.build();
+const traversal = traversalBuilder.build();
 
 if (scriptVariables.startNode) {
-  traversal.traverse(startNode);
+  traversal.traverse(scriptVariables.startNode);
 }
 ```
 
