@@ -27,6 +27,8 @@ Return | Method | Description
 ------ | ------ | -----------
 `Void` | `traverse (Node node, Object context)` | Main traversal function. Traverses node structures either through JCR structure or through the Rest API.
 `Void` | `break ()` | Indicates that the traversal should break and halt further traversing and execution. The break will happen at the beginning of the next iteration. So the current iteration (callback on node) will still finish.
+`Integer` | `getLevel ()` | Returns the current depth/level being traversed.
+`Integer` | `getNumNodes ()` | Returns the number of nodes which has been processed.
 
 ## Example
 
